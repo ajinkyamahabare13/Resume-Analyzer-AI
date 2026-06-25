@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request
 from PyPDF2 import PdfReader
 import os
@@ -32,6 +31,7 @@ def upload():
 
     file.save(filepath)
 
+    # Read PDF
     pdf = PdfReader(filepath)
 
     text = ""
@@ -64,7 +64,7 @@ def upload():
         "C++"
     ]
 
-    # Detect skills in resume
+    # Detect Skills
 
     found_skills = []
 
@@ -73,8 +73,13 @@ def upload():
         if skill.lower() in text.lower():
 
             found_skills.append(skill)
+    print("RESUME TEXT:")
+    print(text)
 
-    # Job skills entered by user
+    print("FOUND SKILLS:")
+    print(found_skills)
+
+    # Job Skills Entered By User
 
     job_skill_list = [
         skill.strip()
@@ -93,17 +98,18 @@ def upload():
         else:
 
             missing_skills.append(skill)
-            
-            
-            recommendations = []
 
-        for skill in missing_skills:
+    # Recommendations
 
-         recommendations.append(
-        f"Learn {skill}"
-    )
+    recommendations = []
 
-    # Match score
+    for skill in missing_skills:
+
+        recommendations.append(
+            f"Learn {skill}"
+        )
+
+    # Match Score
 
     if len(job_skill_list) > 0:
 
@@ -115,7 +121,14 @@ def upload():
     else:
 
         match_score = 0
-    
+
+    # Debug Output
+
+    print("FOUND SKILLS:", found_skills)
+    print("MATCHED SKILLS:", matched_skills)
+    print("MISSING SKILLS:", missing_skills)
+    print("MATCH SCORE:", match_score)
+
     # Save Analysis To Database
 
     conn = sqlite3.connect("resume_analyzer.db")
@@ -123,45 +136,46 @@ def upload():
     cursor = conn.cursor()
 
     cursor.execute(
-    """
-    INSERT INTO analysis_history
-    (filename, match_score, skills)
-    VALUES (?, ?, ?)
-    """,
-    (
-        file.filename,
-        match_score,
-        ", ".join(found_skills)
+        """
+        INSERT INTO analysis_history
+        (filename, match_score, skills)
+        VALUES (?, ?, ?)
+        """,
+        (
+            file.filename,
+            match_score,
+            ", ".join(found_skills)
+        )
     )
-)
 
     conn.commit()
     conn.close()
 
     return render_template(
-    "result.html",
-    resume_text=text,
-    skills=found_skills,
-    match_score=match_score,
-    matched_skills=matched_skills,
-    missing_skills=missing_skills,
-    recommendations=recommendations
-)
+        "result.html",
+        resume_text=text,
+        skills=found_skills,
+        match_score=match_score,
+        matched_skills=matched_skills,
+        missing_skills=missing_skills,
+        recommendations=recommendations
+    )
+
 
 @app.route("/history")
 def history():
 
     conn = sqlite3.connect("resume_analyzer.db")
 
-    conn.row_factory = sqlite3.Row
-
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT *
         FROM analysis_history
         ORDER BY id DESC
-    """)
+        """
+    )
 
     data = cursor.fetchall()
 
@@ -175,4 +189,3 @@ def history():
 
 if __name__ == "__main__":
     app.run(debug=True)
-

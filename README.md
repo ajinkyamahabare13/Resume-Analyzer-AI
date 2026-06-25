@@ -26,6 +26,8 @@ pip install flask PyPDF2
 python app.py
 ```
 
-Open:
+Run the Flask application locally and open:
 
 http://127.0.0.1:5000
+
+in your browser.
